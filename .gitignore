@@ -1,0 +1,17 @@
+# Data & Inspection Lists
+filelist.txt
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Processing products & logs
+*.log
+proc_*/
+scratch/
+__pycache__/
+*.pyc
+
+# SAS / Analysis temporary files
+*.cif
+*SUM.SAS
