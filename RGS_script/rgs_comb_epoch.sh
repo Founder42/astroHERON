@@ -29,7 +29,7 @@ usage() {
 Usage: $(basename "$0") -o <OBSID> -i <DATA_DIR> [options]
 
 Mandatory Arguments:
-  -o <OBSID>       Observation ID (single ID or quoted list, e.g. "0084030101 0900170101")
+  -o <OBSID>       Observation ID (single ID or comma-separated list, e.g. "0084030101,0900170101")
   -i <DATA_DIR>    Root directory containing raw/processing ODF observation data
 
 Optional Arguments:
@@ -44,8 +44,8 @@ Examples:
   $(basename "$0") -o 0900170101 -i /Volumes/Pegasus/LLAGN_archive/M104/XMM \\
                    -c /Users/fangzheng42/Program/SAS/ccf
 
-  # 3. Batch processing multiple ObsIDs
-  $(basename "$0") -o "0084030101 0900170101" -i /Volumes/Pegasus/LLAGN_archive/M104/XMM
+  # 3. Batch processing multiple ObsIDs (comma-separated list)
+  $(basename "$0") -o "0084030101,0900170101" -i /Volumes/Pegasus/LLAGN_archive/M104/XMM
 EOF
     exit "${1:-0}"
 }
@@ -98,7 +98,12 @@ fi
 # ---------------------------------------------------------
 # Process ObsID(s)
 # ---------------------------------------------------------
-IFS=', ' read -r -a OBS_ARRAY <<< "${OBS_IDS}"
+IFS=',' read -r -a RAW_OBS_ARRAY <<< "${OBS_IDS}"
+OBS_ARRAY=()
+for x in "${RAW_OBS_ARRAY[@]}"; do
+    clean_id=$(printf '%s' "${x}" | tr -d '[:space:]' | sed "s/$(printf '\xc2\xa0')//g")
+    [ -n "${clean_id}" ] && OBS_ARRAY+=("${clean_id}")
+done
 
 for obsid in "${OBS_ARRAY[@]}"; do
     [ -n "${obsid}" ] || continue

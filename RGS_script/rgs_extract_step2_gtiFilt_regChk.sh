@@ -30,7 +30,7 @@ usage() {
 Usage: $(basename "$0") -o <OBSID> -i <DATA_DIR> -t <THRESHOLD> [options]
 
 Mandatory Arguments:
-  -o <OBSID>       Observation ID (single ID or quoted list, e.g. "0084030101 0900170101")
+  -o <OBSID>       Observation ID (single ID or comma-separated list, e.g. "0084030101,0900170101")
   -i <DATA_DIR>    Root directory containing raw/processing ODF observation data
   -t <THRESHOLD>   Flaring background count rate filter threshold (e.g. 0.1 or 0.15)
 
@@ -46,8 +46,8 @@ Examples:
   $(basename "$0") -o 0900170101 -i /Volumes/Pegasus/LLAGN_archive/M104/XMM -t 0.15 \\
                    -c /Users/fangzheng42/Program/SAS/ccf
 
-  # 3. Batch processing multiple ObsIDs with same threshold
-  $(basename "$0") -o "0084030101 0900170101" -i /Volumes/Pegasus/LLAGN_archive/M104/XMM -t 0.1
+  # 3. Batch processing multiple ObsIDs with same threshold (comma-separated list)
+  $(basename "$0") -o "0084030101,0900170101" -i /Volumes/Pegasus/LLAGN_archive/M104/XMM -t 0.1
 EOF
     exit "${1:-0}"
 }
@@ -110,7 +110,12 @@ export SAS_CCFPATH="${CCF_PATH}"
 # ---------------------------------------------------------
 # Process ObsID(s)
 # ---------------------------------------------------------
-IFS=', ' read -r -a OBS_ARRAY <<< "${OBS_IDS}"
+IFS=',' read -r -a RAW_OBS_ARRAY <<< "${OBS_IDS}"
+OBS_ARRAY=()
+for x in "${RAW_OBS_ARRAY[@]}"; do
+    clean_id=$(printf '%s' "${x}" | tr -d '[:space:]' | sed "s/$(printf '\xc2\xa0')//g")
+    [ -n "${clean_id}" ] && OBS_ARRAY+=("${clean_id}")
+done
 
 for obsid in "${OBS_ARRAY[@]}"; do
     [ -n "${obsid}" ] || continue
