@@ -45,6 +45,17 @@ Modernized, industrial-grade Bash CLI pipelines based on ESA's **Science Analysi
 ./RGS_script/rgs_comb_epoch.sh -o <OBSID> -i <DATA_DIR> [-c <CCF_PATH>]
 ```
 
+#### Step 4: Multi-Epoch Cross-Observation Spectral Combination (`rgs_comb_all.sh`)
+- Stacks/combines 1st-order (`1003`) spectra across multiple epochs/observations for a designated source (`<SRC_NAME>`) using SAS `rgscombine`.
+- Automatically collects module spectra from all specified ObsIDs into `<DATA_DIR>/<SRC_NAME>_tot_spec/` (or custom directory).
+- Rebins the stacked spectrum with optimal grouping using HEASOFT `ftgrouppha` (`grouptype=opt`).
+- Produces `<SRC_NAME>_o1_src.fits`, `<SRC_NAME>_o1.rmf`, `<SRC_NAME>_o1_bkg.fits`, and `<SRC_NAME>_o1_opt.grp`, ready for XSPEC fitting (`data 1:1 <SRC_NAME>_o1_opt.grp`).
+
+```bash
+# Example:
+./RGS_script/rgs_comb_all.sh -o "0701981601,0701981901" -i <DATA_DIR> -s <SRC_NAME> [-d <OUT_DIR>]
+```
+
 ---
 
 ### 2. XMM-Newton EPIC (`EPIC_script/`)
