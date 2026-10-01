@@ -150,8 +150,30 @@ for obsid in "${OBS_ARRAY[@]}"; do
 
     cd "${WORK_DIR}"
 
-    # 1. Decompression (.gz then .TAR/.tar)
+    # 0. Helper: Relocate files from 'odf' subfolder if present
+    flatten_odf_dir() {
+        if [ -d "odf" ]; then
+            echo -e "${GREEN}[INFO] Detected 'odf' subfolder in $(pwd). Moving ODF files to working root...${NC}"
+            if compgen -G "odf/*" > /dev/null; then
+                mv odf/* .
+            fi
+            rmdir odf 2>/dev/null || rm -rf odf
+            echo -e "${GREEN}[INFO] Successfully relocated ODF files and removed 'odf' folder.${NC}"
+        fi
+    }
+
+    # Check for pre-existing 'odf' directory
+    flatten_odf_dir
+
+    # 1. Decompression (.zip, .gz, then .TAR/.tar)
     echo -e "${GREEN}[INFO] Checking for compressed archives...${NC}"
+    for zip_file in *.zip *.ZIP; do
+        if [ -f "${zip_file}" ]; then
+            echo "Decompressing ${zip_file}..."
+            unzip -q -o "${zip_file}" || true
+        fi
+    done
+
     for gz_file in *.gz; do
         if [ -f "${gz_file}" ]; then
             echo "Decompressing ${gz_file}..."
@@ -165,6 +187,9 @@ for obsid in "${OBS_ARRAY[@]}"; do
             tar -xvf "${tar_file}" || true
         fi
     done
+
+    # Check again in case decompression extracted an 'odf' folder
+    flatten_odf_dir
 
     # 2. Calibration & Ingestion (ccf.cif & *SUM.SAS)
     echo -e "${GREEN}[INFO] Setting up Calibration and ODF Summary...${NC}"
