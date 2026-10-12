@@ -4,7 +4,8 @@ import unittest
 import math
 
 from SpecFitAssist._core import HC_KEV_AA, C_KMS, FWHM_SIGMA_RATIO, AsymValue
-from SpecFitAssist.spec_convert import convert_val, calc_line_width, calc_redshift
+from SpecFitAssist.spec_convert import convert_val, calc_line_width, calc_redshift, calc_shift
+
 
 
 class TestSpecConvert(unittest.TestCase):
@@ -109,6 +110,61 @@ class TestSpecConvert(unittest.TestCase):
         self.assertTrue(res["z"]["value"] < 0)
         self.assertEqual(res["shift_type"], "blueshift (outflow)")
 
+    def test_calc_shift_energy_redshift(self):
+        # E0 = 6.4 (-0.02 / +0.03) keV, z = 0.05
+        rest = AsymValue(value=6.4, err_lo=0.02, err_hi=0.03, unit="keV")
+        res = calc_shift(rest=rest, z=0.05, unit_str="keV")
+
+        expected_val = 6.4 / 1.05
+        expected_lo = 0.02 / 1.05
+        expected_hi = 0.03 / 1.05
+
+        self.assertAlmostEqual(res["shifted"]["value"], expected_val, places=6)
+        self.assertAlmostEqual(res["shifted"]["err_lo"], expected_lo, places=6)
+        self.assertAlmostEqual(res["shifted"]["err_hi"], expected_hi, places=6)
+        self.assertEqual(res["shift_type"], "redshift (receding)")
+        self.assertAlmostEqual(res["v_nonrel_kms"], C_KMS * 0.05, places=3)
+
+    def test_calc_shift_energy_blueshift(self):
+        # E0 = 6.4 keV, z = -0.05 (blueshift)
+        rest = AsymValue(value=6.4, unit="keV")
+        res = calc_shift(rest=rest, z=-0.05, unit_str="keV")
+
+        expected_val = 6.4 / 0.95
+        self.assertAlmostEqual(res["shifted"]["value"], expected_val, places=6)
+        self.assertEqual(res["shift_type"], "blueshift (approaching / outflow)")
+        self.assertTrue(res["v_nonrel_kms"] < 0)
+
+    def test_calc_shift_wavelength(self):
+        # lambda0 = 1215.67 AA, z = 0.1
+        rest = AsymValue(value=1215.67, err_lo=0.1, err_hi=0.2, unit="AA")
+        res = calc_shift(rest=rest, z=0.1, unit_str="AA")
+
+        expected_val = 1215.67 * 1.1
+        expected_lo = 0.1 * 1.1
+        expected_hi = 0.2 * 1.1
+
+        self.assertAlmostEqual(res["shifted"]["value"], expected_val, places=5)
+        self.assertAlmostEqual(res["shifted"]["err_lo"], expected_lo, places=5)
+        self.assertAlmostEqual(res["shifted"]["err_hi"], expected_hi, places=5)
+
+    def test_calc_shift_invalid_z(self):
+        rest = AsymValue(value=6.4, unit="keV")
+        with self.assertRaises(ValueError):
+            calc_shift(rest=rest, z=-1.0, unit_str="keV")
+        with self.assertRaises(ValueError):
+            calc_shift(rest=rest, z=-1.5, unit_str="keV")
+
+    def test_calc_shift_and_redshift_roundtrip(self):
+        # Shift E0 by z=0.035, then compute redshift of shifted line -> recover z=0.035
+        rest = AsymValue(value=6.7, unit="keV")
+        shift_res = calc_shift(rest=rest, z=0.035, unit_str="keV")
+        shifted_obs = AsymValue(value=shift_res["shifted"]["value"], unit="keV")
+        
+        redshift_res = calc_redshift(rest_val=6.7, obs=shifted_obs, unit_str="keV", z0=0.0)
+        self.assertAlmostEqual(redshift_res["z"]["value"], 0.035, places=9)
+
 
 if __name__ == "__main__":
     unittest.main()
+

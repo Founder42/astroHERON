@@ -2,11 +2,13 @@
 
 Supports both hierarchical syntax:
     python -m SpecFitAssist spec convert ...
+    python -m SpecFitAssist spec shift ...
     python -m SpecFitAssist err lin2log ...
 and direct shorthand syntax:
     python -m SpecFitAssist convert ...
     python -m SpecFitAssist width ...
     python -m SpecFitAssist redshift ...
+    python -m SpecFitAssist shift ...
     python -m SpecFitAssist lin2log ...
     python -m SpecFitAssist log2lin ...
 """
@@ -17,8 +19,9 @@ import argparse
 from typing import List, Optional
 
 from ._core import AsymValue, render_table, render_json
-from .spec_convert import convert_val, calc_line_width, calc_redshift
+from .spec_convert import convert_val, calc_line_width, calc_redshift, calc_shift
 from .log_error import lin2log, log2lin
+
 
 
 def _handle_convert(args: argparse.Namespace) -> None:
@@ -119,6 +122,40 @@ def _handle_redshift(args: argparse.Namespace) -> None:
         "Sign convention: +z = redshift (receding), -z = blueshift (approaching / outflow).",
     ]
     print(render_table("spec redshift", rows, notes))
+
+
+def _handle_shift(args: argparse.Namespace) -> None:
+    rest_val = float(args.rest)
+    err_lo = float(args.err_lo) if args.err_lo is not None else 0.0
+    err_hi = float(args.err_hi) if args.err_hi is not None else err_lo
+    z = float(args.z)
+
+    rest_asym = AsymValue(value=rest_val, err_lo=err_lo, err_hi=err_hi, unit=args.unit)
+    res = calc_shift(rest=rest_asym, z=z, unit_str=args.unit, to_unit_str=args.to_unit)
+
+    if args.json:
+        print(render_json(res))
+        return
+
+    shifted_val = AsymValue.from_dict(res["shifted"])
+
+    v_cz_str = f"{res['v_nonrel_kms']:+.1f} km/s"
+    v_rel_str = f"{res['v_rel_kms']:+.1f} km/s"
+
+    rows = [
+        ("Rest Centroid (E0)", rest_asym.format_str()),
+        ("Applied Redshift (z)", f"{z:+.6g}"),
+        ("Shifted Centroid (E')", shifted_val.format_str()),
+        ("Equivalent v = cz", v_cz_str),
+        ("Equivalent v (rel)", v_rel_str),
+        ("Shift Classification", res["shift_type"]),
+    ]
+    notes = [
+        "Formula: E' = E0 / (1 + z) (Energy) or λ' = λ0 * (1 + z) (Wavelength).",
+        "Sign convention: +z = redshift (energy decreases), -z = blueshift (energy increases).",
+    ]
+    print(render_table("spec shift", rows, notes))
+
 
 
 def _handle_lin2log(args: argparse.Namespace) -> None:
@@ -235,6 +272,19 @@ def build_parser() -> AstroArgumentParser:
         p.add_argument("-z", "--z0", type=float, default=0.0, help="Source cosmological redshift (default: 0.0)")
         p.add_argument("--json", action="store_true", help="Output JSON")
         p.set_defaults(func=_handle_redshift)
+
+    # Command: shift
+    for p in [spec_sub.add_parser("shift", help="Calculate shifted centroid given rest centroid and redshift z"),
+              subparsers.add_parser("shift", help="Calculate shifted centroid given rest centroid and redshift z")]:
+        p.add_argument("rest", type=float, help="Rest-frame line centroid")
+        p.add_argument("err_lo", type=float, nargs="?", default=None, help="Rest-frame lower error")
+        p.add_argument("err_hi", type=float, nargs="?", default=None, help="Rest-frame upper error")
+        p.add_argument("-z", "--z", required=True, type=float, help="Redshift z (positive=redshift, negative=blueshift)")
+        p.add_argument("-u", "--unit", required=True, help="Spectral unit (e.g. keV, eV, AA, nm)")
+        p.add_argument("-t", "--to-unit", default=None, help="Output target unit (default: same unit)")
+        p.add_argument("--json", action="store_true", help="Output JSON")
+        p.set_defaults(func=_handle_shift)
+
 
     # Group: err
     err_p = subparsers.add_parser("err", help="Logarithmic <-> Linear error and bounds conversions")

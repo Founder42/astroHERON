@@ -235,6 +235,69 @@ def calc_redshift(
     }
 
 
+def calc_shift(
+    rest: AsymValue,
+    z: float,
+    unit_str: str,
+    to_unit_str: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Calculate the shifted observed line centroid (E' or lambda') given rest centroid and redshift z.
+
+    Formula:
+      For Energy:     E' = E0 / (1 + z)
+      For Wavelength: lambda' = lambda0 * (1 + z)
+
+    Signs:
+      z > 0: Redshift (receding, energy decreases, wavelength increases)
+      z < 0: Blueshift (approaching / outflow, energy increases, wavelength decreases)
+      z = 0: Rest-frame (no shift)
+    """
+    u_obj = parse_unit(unit_str)
+    if rest.value <= 0:
+        raise ValueError("Rest-frame line centroid must be strictly positive.")
+    if (1.0 + z) <= 0:
+        raise ValueError(f"1 + z must be strictly positive (got z = {z} <= -1).")
+
+    is_energy = is_energy_unit(u_obj)
+    is_wave = is_wavelength_unit(u_obj)
+    if not (is_energy or is_wave):
+        raise ValueError(f"Unit '{unit_str}' is neither energy nor wavelength.")
+
+    if is_energy:
+        f_shift = lambda e: e / (1.0 + z)
+    else:
+        f_shift = lambda lam: lam * (1.0 + z)
+
+    shifted_asym = propagate_bounds(f_shift, rest, unit=u_obj.to_string(), check_positive=True)
+
+    if to_unit_str is not None:
+        final_asym = convert_val(shifted_asym, from_unit_str=u_obj.to_string(), to_unit_str=to_unit_str)
+    else:
+        final_asym = shifted_asym
+
+    v_nonrel = C_KMS * z
+    v_rel = C_KMS * (((1.0 + z) ** 2 - 1.0) / ((1.0 + z) ** 2 + 1.0))
+
+    if z > 0:
+        shift_type = "redshift (receding)"
+    elif z < 0:
+        shift_type = "blueshift (approaching / outflow)"
+    else:
+        shift_type = "rest-frame (no shift)"
+
+    return {
+        "rest": rest.to_dict(),
+        "z": z,
+        "is_energy": is_energy,
+        "shifted": final_asym.to_dict(),
+        "v_nonrel_kms": v_nonrel,
+        "v_rel_kms": v_rel,
+        "shift_type": shift_type,
+    }
+
+
+
 if __name__ == "__main__":
     import sys
     try:

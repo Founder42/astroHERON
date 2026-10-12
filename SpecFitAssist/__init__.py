@@ -10,7 +10,7 @@ from ._core import (
     render_table,
     render_json,
 )
-from .spec_convert import convert_val, calc_line_width, calc_redshift
+from .spec_convert import convert_val, calc_line_width, calc_redshift, calc_shift
 from .log_error import lin2log, log2lin
 
 __all__ = [
@@ -25,6 +25,8 @@ __all__ = [
     "convert_val",
     "calc_line_width",
     "calc_redshift",
+    "calc_shift",
     "lin2log",
     "log2lin",
 ]
+

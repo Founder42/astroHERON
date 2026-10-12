@@ -36,7 +36,14 @@ Sign convention:
 - $z > 0$: Redshift / receding ($+v$).
 - $z < 0$: Blueshift / approaching or outflow ($-v$).
 
-### D. Linear ↔ Logarithmic Error Transformations (`lin2log`, `log2lin`)
+### D. Forward Redshift / Blueshift Transformation (`shift`)
+Given rest-frame centroid $E_0$ (or $\lambda_0$) and redshift $z$ ($z > 0$ for redshift, $z < 0$ for blueshift):
+$$E' = \frac{E_0}{1 + z}, \qquad \lambda' = \lambda_0\,(1 + z)$$
+Uncertainty bounds $(E_0, -\Delta E_{\rm lo}, +\Delta E_{\rm hi})$ map directly without bound swapping ($1+z > 0$ is monotonic increasing with respect to $E_0$):
+$$\Delta E'_{\rm lo} = \frac{\Delta E_{\rm lo}}{1 + z}, \qquad \Delta E'_{\rm hi} = \frac{\Delta E_{\rm hi}}{1 + z}$$
+Physical constraint: $z > -1$. Reports equivalent $v = cz$ and relativistic Doppler velocity.
+
+### E. Linear ↔ Logarithmic Error Transformations (`lin2log`, `log2lin`)
 Fixed base: $\log_{10}$.
 - **`errors` mode**: Input $(V, \Delta V_{\rm lo}, \Delta V_{\rm hi})$
   $$\log V = \log_{10} V, \quad \Delta L_{\rm lo} = \log_{10} V - \log_{10}(V - \Delta V_{\rm lo}), \quad \Delta L_{\rm hi} = \log_{10}(V + \Delta V_{\rm hi}) - \log_{10} V$$
@@ -60,18 +67,22 @@ python -m SpecFitAssist width 6.7 5 --center-unit keV --width-unit eV --width-ty
 # 3. Source-corrected line redshift & velocities
 python -m SpecFitAssist redshift -r 6.966 -o 6.90 -0.01 0.012 --unit keV -z 0.0028
 
-# 4. Linear error to Log10 error
+# 4. Forward redshift transformation (calculate shifted centroid E' from E0 and z)
+python -m SpecFitAssist shift 6.4 -0.02 0.03 -z 0.05 -u keV
+
+# 5. Linear error to Log10 error
 python -m SpecFitAssist lin2log 3.2e42 -0.5e42 0.8e42
 
-# 5. Linear bounds to Log10 error
+# 6. Linear bounds to Log10 error
 python -m SpecFitAssist lin2log 3.2e42 2.7e42 4.0e42 --mode bounds
 
-# 6. Log10 error to Linear error
+# 7. Log10 error to Linear error
 python -m SpecFitAssist log2lin 42.5 -0.1 0.2
 
 # All commands support machine-readable JSON:
-python -m SpecFitAssist convert 6.4 -0.02 0.03 --unit keV --json
+python -m SpecFitAssist shift 6.4 -0.02 0.03 -z 0.05 -u keV --json
 ```
+
 
 ---
 
