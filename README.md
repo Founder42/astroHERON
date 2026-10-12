@@ -68,7 +68,27 @@ Modernized, industrial-grade Bash CLI pipelines based on ESA's **Science Analysi
 
 ---
 
-### 4. Ancillary Astrophysics Tools
+### 4. Spectral Fitting Assistant Toolkit (`SpecFitAssist/`)
+
+Industrial-grade deterministic CLI & copilot skill for high-energy astrophysics spectral fitting:
+- **Energy ↔ Wavelength Conversion (`convert`)**: Exact asymmetric error mapping between $E$ (keV, eV) and $\lambda$ (\AA, nm) with automatic bound swapping for decreasing relations.
+- **Line Broadening / Resolution to Velocity (`width`)**: Converts Gaussian $\sigma$ or FWHM broadening/resolution to velocity ($\text{km/s}$), resolving power $R$, and dual-unit equivalent widths.
+- **Source-Corrected Redshift & Doppler Velocity (`redshift`)**: Computes exact cosmological source-corrected $z$, non-relativistic $cz$, and relativistic Doppler velocity with relative difference diagnostics.
+- **Linear ↔ Logarithmic Uncertainties (`lin2log`, `log2lin`)**: Exact conversion between linear and $\log_{10}$ space supporting both error ranges and boundary value modes.
+- **Natural Language Copilot (`SKILL.md`)**: Seamlessly integrated with Antigravity / Gemini CLI with Zero Mental Arithmetic.
+
+```bash
+# Examples:
+python -m SpecFitAssist convert 6.4 -0.02 0.03 --unit keV
+python -m SpecFitAssist width 6.7 5 --center-unit keV --width-unit eV --width-type fwhm
+python -m SpecFitAssist redshift -r 6.966 -o 6.90 -0.01 0.012 --unit keV -z 0.0028
+python -m SpecFitAssist lin2log 3.2e42 -0.5e42 0.8e42
+```
+
+---
+
+### 5. Ancillary Astrophysics Tools
 - `atom_line.py`: Atomic emission line reference tool.
 - `cAIC_cal.py`: Corrected Akaike Information Criterion (cAIC) calculator for model selection.
 - *Other tools*: Under construction.
+
